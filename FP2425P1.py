@@ -142,23 +142,19 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
     if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
         num_linhas = len(tabuleiro)
         num_colunas = len(tabuleiro[0])
-        
-        # Convertendo a posição em coordenadas (linha, coluna)
-        posicao -= 1  # Ajusta para índice 0
-        linha = posicao // num_colunas
-        coluna = posicao % num_colunas
-        
+        linha = (posicao - 1) // num_colunas
+        coluna = (posicao - 1) % num_colunas
         adjacentes = ()
         
         # Movimentos possíveis para encontrar as adjacências (horizontal, vertical e diagonal)
         direcoes = ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
         
-        for dl, dc in direcoes:
-            nova_linha = linha + dl
-            nova_coluna = coluna + dc
+        for x, y in direcoes:
+            nova_linha = linha + x
+            nova_coluna = coluna + y
             # Verifica se a nova posição está dentro dos limites do tabuleiro
             if 0 <= nova_linha < num_linhas and 0 <= nova_coluna < num_colunas:
-                adj_pos = nova_linha * num_colunas + nova_coluna + 1  # Convertendo para posição 1-indexed
+                adj_pos = nova_linha * num_colunas + nova_coluna + 1 
                 adjacentes += (adj_pos, )
         
         # Retorna as posições adjacentes ordenadas
@@ -208,32 +204,28 @@ def marca_posicao(tabuleiro, posicao, inteiro):
         raise ValueError('marca_posicao: argumentos invalidos')
     
 def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
-    if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao) and -1 <= valor <= 1 and 0 < consecutivos <=  len(tabuleiro): 
-        linha = obtem_linha(tabuleiro, posicao)
-        coluna = obtem_coluna(tabuleiro, posicao)
-        diagonal = obtem_diagonais(tabuleiro, posicao)
-        
-        if obtem_valor(tabuleiro, posicao) != valor:
+    if eh_tabuleiro(tabuleiro) and -1 <= valor <= 1 and 0 < consecutivos <= len(tabuleiro):
+        if not eh_posicao_valida(tabuleiro, posicao) or obtem_valor(tabuleiro, posicao) != valor:
             return False
         
-        if conta_consecutivos(tabuleiro, posicao, linha, valor, consecutivos):
+        linha = obtem_linha(tabuleiro, posicao)
+        coluna = obtem_coluna(tabuleiro, posicao)
+        diag = obtem_diagonais(tabuleiro, posicao)
+        
+        colunas_cons = conta_consecutivos(tabuleiro, posicao, coluna, valor)
+        linhas_cons = conta_consecutivos(tabuleiro, posicao, linha, valor)
+        diag_cons = conta_consecutivos(tabuleiro, posicao, diag[0], valor)
+        antidiag_cons = conta_consecutivos(tabuleiro, posicao, diag[1], valor)
+        
+        if colunas_cons >= consecutivos or linhas_cons >= consecutivos or diag_cons >= consecutivos or antidiag_cons >= consecutivos:
             return True
-
-        if conta_consecutivos(tabuleiro, posicao, coluna, valor, consecutivos):
-            return True
-
-        if conta_consecutivos(tabuleiro, posicao, diagonal[0], valor, consecutivos):
-            return True
-
-        if conta_consecutivos(tabuleiro, posicao, diagonal[1], valor, consecutivos):
-            return True
-
-        return False
+        else:
+            return False
     
     else:
         raise ValueError("verifica_k_linhas: argumentos invalidos")
             
-def conta_consecutivos(tabuleiro,posicao, tuplo1, valor, consecutivos):
+def conta_consecutivos(tabuleiro,posicao, tuplo1, valor):
     contador = 0
     cons_max = 0
     for i in tuple(sorted(tuplo1)):
@@ -242,38 +234,85 @@ def conta_consecutivos(tabuleiro,posicao, tuplo1, valor, consecutivos):
                 contador += 1
                 if contador > cons_max:
                     cons_max = contador
+            else:
                 contador = 0
-        if i > posicao:
+                cons_max = 0
+        if i >= posicao:
             if obtem_valor(tabuleiro, i) == valor:
                 contador += 1
-            else:
-                if cons_max >= cons_max:
-                    return True
                 if contador >= cons_max:
                     cons_max = contador
-                else:
-                    contador = 0
-                    break
+            else:
+                contador = 0
+                break
+    return cons_max
+
 
 def eh_fim_jogo(tabuleiro, n1):
     if eh_tabuleiro(tabuleiro) and isinstance(n1, int):
-        for i in range(len(tabuleiro)):
-            # Check rows
-            if verifica_k_linhas(tabuleiro, i+1, obtem_valor(tabuleiro, i+1), n1):
-                return True
+        cont_pos_livres = 0
+        for i in range(1, len(tabuleiro)+1):
+            if obtem_valor(tabuleiro, i) == 0:
+                cont_pos_livres += 1
+            
+            else:  
+                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
+                    return True
 
-            # Check columns
-            if verifica_k_linhas(tabuleiro, i+1, obtem_valor(tabuleiro, i+1), n1):
-                return True
-
-            # Check diagonals
-            if verifica_k_linhas(tabuleiro, i+1, obtem_valor(tabuleiro, i+1), n1):
-                return True
+                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
+                    return True
+                    
+                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
+                    return True
+                    
+        if cont_pos_livres == 0:
+            return True
 
         return False
     else:
         raise ValueError("eh_fim_jogo: argumentos invalidos")
+
+def escolhe_posicao_manual(tabuleiro):
+    if eh_tabuleiro(tabuleiro):
+        posicao = int(input("Turno do jogador. Escolha uma posicao livre: "))
+        if eh_posicao_valida(tabuleiro, posicao):
+            if eh_posicao_livre(tabuleiro, posicao):
+                return posicao
+            else:
+                return escolhe_posicao_manual(tabuleiro)
+        else:
+            return escolhe_posicao_manual(tabuleiro)
+    else:
+        raise ValueError("escolhe_posicao_manual: argumento invalido")
     
-tab = ((1,0,0,1),(-1,1,0,0), (0,0,0,0))
-print(eh_fim_jogo(tab, 3))
-print(verifica_k_linhas(tab,1,1, 3))
+def escolhe_posicao_auto(tabuleiro, valor, posicao, dificuldade):
+    if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and eh_posicao_valida(tabuleiro,posicao) and dificuldade in ("facil", "normal", "dificil"):
+        if eh_posicao_livre(tabuleiro, posicao):
+            if dificuldade == "facil":
+                return escolhe_posicao_auto_facil(tabuleiro, valor)
+            #elif dificuldade == "normal":
+                #return escolhe_posicao_auto_normal(tabuleiro, valor)
+            #elif dificuldade == "dificil":
+                #return escolhe_posicao_auto_dificil(tabuleiro, valor)
+    else:
+        raise ValueError("escolhe_posicao_auto: argumentos invalidos")
+            
+def escolhe_posicao_auto_facil(tabuleiro, valor):
+    valor_simetrico = -1 if valor == 1 else 1
+        
+    for i in range(1, len(tabuleiro)*len(tabuleiro[0]) + 1):
+        if obtem_valor(tabuleiro, i) == valor_simetrico:
+            adjacentes = obtem_posicoes_adjacentes(tabuleiro, i)
+            for adj in range(len(adjacentes) - 1):
+                if adjacentes[adj] < i and adjacentes[adj + 1] > i:
+                    return adjacentes[adj]
+                
+    for i in range(1, len(tabuleiro) + 1):
+        if eh_posicao_livre(tabuleiro, i):
+            return i
+
+tab = ((0,0,0),(0,1,0),(-1,0,1))
+print(escolhe_posicao_auto(tab, -1, 3, "facil"))
+print(obtem_posicoes_adjacentes(tab, 5))
+
+        
