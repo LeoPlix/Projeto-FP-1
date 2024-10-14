@@ -103,6 +103,8 @@ def tabuleiro_para_str(tabuleiro):
     return tab_desenho
 
 def eh_posicao_valida(tabuleiro, posicao):
+    if not eh_tabuleiro(tabuleiro):
+        raise ValueError("eh_posicao_valida: argumentos invalidos")
     return eh_posicao(posicao) and posicao <= len(tabuleiro)*len(tabuleiro[0])
 
 
@@ -110,7 +112,7 @@ def eh_posicao_livre(tabuleiro, posicao):
     if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
         return obtem_valor(tabuleiro, posicao) == 0
     else:
-        raise ValueError("argumentos inválidos")
+        raise ValueError("eh_posicao_livre: argumentos inválidos")
 
 def obtem_posicoes_livres(tabuleiro):
     if not eh_tabuleiro(tabuleiro):
@@ -187,18 +189,6 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
             distancias_total += (elemento[0],)
             
         return distancias_total
-        
-        #distancias = ()
-        #for elemento in t:
-            #distancias += ((elemento, distancia_centro(elem_central, elemento)),)
-            
-        #distancias = tuple(sorted(distancias, key=lambda x: (x[1], x[0])))
-        
-        #distancias_total = ()
-        #for elemento in distancias:
-            #distancias_total += (elemento[0],)
-            
-        #return distancias_total
 
     else:
         raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
@@ -292,47 +282,83 @@ def eh_fim_jogo(tabuleiro, consecutivos):
 
 def escolhe_posicao_manual(tabuleiro):
     if eh_tabuleiro(tabuleiro):
-        posicao = int(input("Turno do jogador. Escolha uma posicao livre: "))
-        if eh_posicao_valida(tabuleiro, posicao):
-            if eh_posicao_livre(tabuleiro, posicao):
-                return posicao
+        posicao = eval(input("Turno do jogador. Escolha uma posicao livre: "))
+        if isinstance(posicao, int):
+            if eh_posicao_valida(tabuleiro, posicao):
+                if eh_posicao_livre(tabuleiro, posicao):
+                    return posicao
+                else:
+                    return escolhe_posicao_manual(tabuleiro)
             else:
                 return escolhe_posicao_manual(tabuleiro)
         else:
-            return escolhe_posicao_manual(tabuleiro)
+            raise ValueError("escolhe_posicao_manual: argumento invalido")
     else:
         raise ValueError("escolhe_posicao_manual: argumento invalido")
     
-def escolhe_posicao_auto(tabuleiro, valor, posicao, dificuldade):
-    if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and eh_posicao_valida(tabuleiro,posicao) and dificuldade in ("facil", "normal", "dificil"):
-        if eh_posicao_livre(tabuleiro, posicao):
+def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
+    if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and consecutivos > 0 and dificuldade in ("facil", "normal", "dificil"):
+        if not eh_fim_jogo(tabuleiro, consecutivos):
             if dificuldade == "facil":
-                return escolhe_posicao_auto_facil(tabuleiro, valor)
-            #elif dificuldade == "normal":
-                #return escolhe_posicao_auto_normal(tabuleiro, valor)
+                return escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos)
+            if dificuldade == "normal":
+                return escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos)
             #elif dificuldade == "dificil":
                 #return escolhe_posicao_auto_dificil(tabuleiro, valor)
     else:
         raise ValueError("escolhe_posicao_auto: argumentos invalidos")
             
-def escolhe_posicao_auto_facil(tabuleiro, valor):
-    valor_simetrico = -1 if valor == 1 else 1
+def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
         
-    for i in range(1, len(tabuleiro)*len(tabuleiro[0]) + 1):
-        if obtem_valor(tabuleiro, i) == valor_simetrico:
+    posicoes_validas = ()
+    posicoes_livres = 0
+        
+    for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
+        if obtem_valor(tabuleiro, i) == 0:
+            posicoes_livres += 1
+        if obtem_valor(tabuleiro, i) == valor:
             adjacentes = obtem_posicoes_adjacentes(tabuleiro, i)
-            for adj in range(len(adjacentes) - 1):
-                if adjacentes[adj] < i and adjacentes[adj + 1] > i:
-                    return adjacentes[adj]
-                
-    for i in range(1, len(tabuleiro) + 1):
+            for adj in adjacentes:
+                if eh_posicao_livre(tabuleiro, adj): 
+                    posicoes_validas += (adj,)
+
+    
+    if posicoes_validas:
+        return ordena_posicoes_tabuleiro(tabuleiro, posicoes_validas)[0]
+    
+    if len(posicoes_validas) == 0:
+        return ordena_posicoes_tabuleiro(tabuleiro, obtem_posicoes_livres(tabuleiro))[0]
+    
+    if posicoes_livres == len(tabuleiro) * len(tabuleiro[0]):
+        return ordena_posicoes_tabuleiro(tabuleiro, obtem_posicoes_livres(tabuleiro))[0]
+    
+    for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
         if eh_posicao_livre(tabuleiro, i):
             return i
 
-tab = ((1,0,0,1),(-1,1,0,1), (-1,0,0,-1))
+def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
+    posicoes_l = ()
+    posicoes_adv = ()
+    posicoes_livres = obtem_posicoes_livres(tabuleiro)
+    
+    for l in range(consecutivos, 0, -1):
+        for posicao in posicoes_livres:
+            tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
+            if verifica_k_linhas(tabuleiro_novo, posicao, valor, l):
+                posicoes_l += (posicao,)
+        if posicoes_l:
+            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_l)[0]
+            
+    for l in range(consecutivos, 0, -1):
+        for posicao in posicoes_livres:
+            tabuleiro_novo = marca_posicao(tabuleiro, posicao, -valor)
+            if verifica_k_linhas(tabuleiro_novo, posicao, -valor, l):
+                posicoes_adv += (posicao,)
+        if posicoes_adv:
+            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_adv)[0]
+    
+    if len(posicoes_livres) == len(tabuleiro)*len(tabuleiro[0]):
+        return ordena_posicoes_tabuleiro(tabuleiro, tuple(range(1, len(tabuleiro)*len(tabuleiro[0]))))[0]
 
-print(escolhe_posicao_auto(tab, -1, 3, 'facil'))
-print(verifica_k_linhas(tab, 6, -1, 7))
-print(ordena_posicoes_tabuleiro(tab, tuple(range(1,13))))
-
-        
+tab = ((1, 0, 0, 0, 0), (0, -1, 1, 1, 0), (0, 0, -1, 0, 0), (0, 0, 0, 0, 0), (0, 0, 0, 0, 0))
+print(escolhe_posicao_auto(tab, -1, 4, "normal"))
