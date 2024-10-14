@@ -29,17 +29,17 @@ def obtem_valor(tabuleiro, posicao):
     return tabuleiro[linhas][colunas]  
 
 def obtem_coluna(tabuleiro, posicao):
-    coluna = (posicao - 1) % len(tabuleiro[0])  # Calculate the column number
+    coluna = (posicao - 1) % len(tabuleiro[0])  # Caluclar o número da coluna
     tuplo = ()
     for i in range(len(tabuleiro)):
-        tuplo += (i * len(tabuleiro[0]) + coluna + 1,)  # Calculate position and append to tuple
+        tuplo += (i * len(tabuleiro[0]) + coluna + 1,)  # Calcular a posição e adicionar ao tuplo
     return tuplo
 
 def obtem_linha(tabuleiro, posicao):
     linha = (posicao - 1) // len(tabuleiro[0])  
     tuplo = ()
     for i in range(1, len(tabuleiro[0]) + 1):
-        tuplo += (linha * len(tabuleiro[0]) + i,)  # Calculate position and append to tuple
+        tuplo += (linha * len(tabuleiro[0]) + i,)  # Calcular a posiçãp e adicionar ao tuplo
     return tuplo
 
 def obtem_diagonais(tabuleiro, posicao):
@@ -53,13 +53,13 @@ def obtem_diagonais(tabuleiro, posicao):
     diagonal, antidiagonal = (), ()
     i,j = linha,coluna
     
-    # Ciclo para adicionar a variável posicao e os elementos da diagonal no sentido cima/esquerda
+    # Sentido cima/esquerda (diagonal)
     while i >= 0 and j >= 0:
         diagonal += ((i * colunas + j + 1),)  
         i -= 1
         j -= 1
     
-    # Ciclo para adicionar os elementos das diagonal no sentido baixo/direita
+    # Sentido baixo/direita (diagonal)
     i, j = linha + 1, coluna + 1  #Para garantir que não acrescenta a variável posicao de novo
     while i < linhas and j < colunas:
         diagonal += ((i * colunas + j + 1),) 
@@ -67,20 +67,20 @@ def obtem_diagonais(tabuleiro, posicao):
         j += 1
 
     i, j = linha, coluna  # Refazer o processo mas com antidiagonais
-    # Ciclo para adicionar a variável posicao e os elementos da diagonal no sentido cima/direita
+    # Sentido cima/direita (antidiagonal)
     while i >= 0 and j < colunas:
         antidiagonal += ((i * colunas + j + 1),) 
         i -= 1
         j += 1
     
-    # Ciclo para adicionar os elementos das diagonal no sentido baixo/esquerda
+    # Sentido baixo/esquerda (antidiagonal)
     i, j = linha + 1, coluna - 1
     while i < linhas and j >= 0:
         antidiagonal += ((i * colunas + j + 1),)  
         i += 1
         j -= 1
     
-    return (tuple(sorted(diagonal)), tuple(reversed(sorted(antidiagonal))))    #ordenar as diagonais e antidiagonais
+    return (tuple(sorted(diagonal)), tuple(reversed(sorted(antidiagonal)))) #ordenar as diagonais e antidiagonais
 
 def tabuleiro_para_str(tabuleiro):
     tab_desenho = ""
@@ -116,23 +116,23 @@ def obtem_posicoes_livres(tabuleiro):
     if not eh_tabuleiro(tabuleiro):
         raise ValueError("obtem_posicoes_livres: argumento invalido")
     else:
-        livres = ()
+        livres = ()   #Tuplo para guardar as posições livres
         posicoes = 1
         for i in tabuleiro:
             for j in i:
                 if eh_posicao_livre(tabuleiro, posicoes):
-                    livres += (posicoes,)
+                    livres += (posicoes,)  #Adicionar a posição livre ao tuplo
                 posicoes += 1
         return livres
     
 def obtem_posicoes_jogador(tabuleiro, jogador):
     if eh_tabuleiro(tabuleiro) and isinstance(jogador,int) and -1 <= jogador <= 1:
-        pos_jogador = ()
+        pos_jogador = ()  #Tuplo para guardar as posições do jogador
         posicoes = 1
         for i in tabuleiro:
             for j in i:
                 if j == jogador:
-                    pos_jogador += (posicoes,)
+                    pos_jogador += (posicoes,)   #Adicionar as posiçoes com o valor do jogador ao tuplo
                 posicoes += 1
         return pos_jogador
     else:
@@ -146,7 +146,7 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
         coluna = (posicao - 1) % num_colunas
         adjacentes = ()
         
-        # Movimentos possíveis para encontrar as adjacências (horizontal, vertical e diagonal)
+        # Direções possíveis para encontrar as adjacências (horizontal, vertical e diagonal/antidiagonal)
         direcoes = ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
         
         for x, y in direcoes:
@@ -162,25 +162,48 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
 
     else:
         raise ValueError("obtem_posicoes_adjacentes: argumentos invalidos")
-        
-        
+
 def ordena_posicoes_tabuleiro(tabuleiro, t):
-    if eh_tabuleiro(tabuleiro) and isinstance(t,tuple):
-        pos_centro = ()
-        aprox_linha = round(len(tabuleiro)/ 2 + 1)
-        aprox_coluna = round(len(tabuleiro[0])/ 2 + 1)
-        i = 0
-        for j in obtem_coluna(tabuleiro, aprox_coluna):
-            if i == aprox_linha - 1:
-                pos_centro += (j,)
-            i += 1
-        pos_centro += obtem_posicoes_adjacentes(tabuleiro, pos_centro[0])
-        for i in range(len(t)):
-            if i not in pos_centro and i != 0:
-                pos_centro += (i,)
-        return pos_centro
+    if eh_tabuleiro(tabuleiro) and isinstance(t, tuple):
+        m, n = obtem_dimensao(tabuleiro)[0], obtem_dimensao(tabuleiro)[1]
+        elem_central = (m//2) * n + (n//2) + 1
+        
+        def distancia_centro(centro, elemento):
+            linha_centro = (centro - 1)//n
+            coluna_centro = (centro - 1)%n
+            linha_elemento = (elemento - 1) // n
+            coluna_elemento = (elemento - 1) % n
+            return max(abs(linha_elemento - linha_centro), abs(coluna_elemento - coluna_centro))
+        
+        distancias = ()
+        for elemento in t:
+            distancias += ((elemento, distancia_centro(elem_central, elemento)),)
+            
+        # Ordena por distância ao centro, e em caso de empate, por posição original
+        distancias = sorted(distancias, key=lambda x: (x[1], x[0]))
+        
+        distancias_total = ()
+        for elemento in distancias:
+            distancias_total += (elemento[0],)
+            
+        return distancias_total
+        
+        #distancias = ()
+        #for elemento in t:
+            #distancias += ((elemento, distancia_centro(elem_central, elemento)),)
+            
+        #distancias = tuple(sorted(distancias, key=lambda x: (x[1], x[0])))
+        
+        #distancias_total = ()
+        #for elemento in distancias:
+            #distancias_total += (elemento[0],)
+            
+        #return distancias_total
+
     else:
         raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
+        
+
         
 def marca_posicao(tabuleiro, posicao, inteiro):
     if eh_tabuleiro(tabuleiro) and eh_posicao_livre(tabuleiro, posicao) and (inteiro == 1 or inteiro == -1):
@@ -188,15 +211,15 @@ def marca_posicao(tabuleiro, posicao, inteiro):
         linha = (posicao - 1) // num_colunas
         coluna = (posicao - 1) % num_colunas
     
-        tab_marcado = ()
-        for i in range(len(tabuleiro)):  # Cria um novo tabuleiro marcando a posição com o inteiro dado (jogador)
+        tab_marcado = ()  # Tuplo novo com o novo valor que queremos
+        for i in range(len(tabuleiro)):  # Cria um novo tuplo de tabuleiro marcando a posição com o inteiro dado (jogador)
             nova_linha = ()
             for j in range(len(tabuleiro[i])):
                 if i == linha and j == coluna:
                     nova_linha += (inteiro,)  # Marca a posição com o jogador
                 else:
-                    nova_linha += (tabuleiro[i][j],) 
-            tab_marcado += (nova_linha,)
+                    nova_linha += (tabuleiro[i][j],) # Mantém o valor original
+            tab_marcado += (nova_linha,) # Adiciona a nova linha ao tuplo
 
         return tab_marcado
     
@@ -204,7 +227,7 @@ def marca_posicao(tabuleiro, posicao, inteiro):
         raise ValueError('marca_posicao: argumentos invalidos')
     
 def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
-    if eh_tabuleiro(tabuleiro) and -1 <= valor <= 1 and 0 < consecutivos <= len(tabuleiro):
+    if eh_tabuleiro(tabuleiro) and (-1 == valor or valor == 1) and 0 < consecutivos and isinstance(consecutivos, int):
         if not eh_posicao_valida(tabuleiro, posicao) or obtem_valor(tabuleiro, posicao) != valor:
             return False
         
@@ -224,7 +247,8 @@ def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
     
     else:
         raise ValueError("verifica_k_linhas: argumentos invalidos")
-            
+ 
+"""Função auxiliar para contar o número de peças consecutivas"""           
 def conta_consecutivos(tabuleiro,posicao, tuplo1, valor):
     contador = 0
     cons_max = 0
@@ -248,21 +272,15 @@ def conta_consecutivos(tabuleiro,posicao, tuplo1, valor):
     return cons_max
 
 
-def eh_fim_jogo(tabuleiro, n1):
-    if eh_tabuleiro(tabuleiro) and isinstance(n1, int):
+def eh_fim_jogo(tabuleiro, consecutivos):
+    if eh_tabuleiro(tabuleiro) and isinstance(consecutivos, int) and consecutivos > 0:
         cont_pos_livres = 0
-        for i in range(1, len(tabuleiro)+1):
+        for i in range(1, len(tabuleiro)*len(tabuleiro[0])+1):
             if obtem_valor(tabuleiro, i) == 0:
                 cont_pos_livres += 1
             
             else:  
-                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
-                    return True
-
-                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
-                    return True
-                    
-                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), n1):
+                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), consecutivos):
                     return True
                     
         if cont_pos_livres == 0:
@@ -311,8 +329,10 @@ def escolhe_posicao_auto_facil(tabuleiro, valor):
         if eh_posicao_livre(tabuleiro, i):
             return i
 
-tab = ((0,0,0),(0,1,0),(-1,0,1))
-print(escolhe_posicao_auto(tab, -1, 3, "facil"))
-print(obtem_posicoes_adjacentes(tab, 5))
+tab = ((1,0,0,1),(-1,1,0,1), (-1,0,0,-1))
+
+print(escolhe_posicao_auto(tab, -1, 3, 'facil'))
+print(verifica_k_linhas(tab, 6, -1, 7))
+print(ordena_posicoes_tabuleiro(tab, tuple(range(1,13))))
 
         
