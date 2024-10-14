@@ -18,7 +18,10 @@ def eh_tabuleiro(tabuleiro):
     return True
     
 def eh_posicao(posicao):
-    return isinstance(posicao,int) and posicao > 0
+    if isinstance(posicao,int) and 0 < posicao < 10000:  #10000 é o tamanho de uma matriz 100x100
+        return True
+    else:
+        return False
 
 def obtem_dimensao(tabuleiro):
     return (len(tabuleiro), len(tabuleiro[0]))
@@ -103,7 +106,7 @@ def tabuleiro_para_str(tabuleiro):
     return tab_desenho
 
 def eh_posicao_valida(tabuleiro, posicao):
-    if not eh_tabuleiro(tabuleiro):
+    if not eh_tabuleiro(tabuleiro) or not isinstance(posicao, int):
         raise ValueError("eh_posicao_valida: argumentos invalidos")
     return eh_posicao(posicao) and posicao <= len(tabuleiro)*len(tabuleiro[0])
 
@@ -112,7 +115,7 @@ def eh_posicao_livre(tabuleiro, posicao):
     if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
         return obtem_valor(tabuleiro, posicao) == 0
     else:
-        raise ValueError("eh_posicao_livre: argumentos inválidos")
+        raise ValueError("eh_posicao_livre: argumentos invalidos")
 
 def obtem_posicoes_livres(tabuleiro):
     if not eh_tabuleiro(tabuleiro):
@@ -128,7 +131,7 @@ def obtem_posicoes_livres(tabuleiro):
         return livres
     
 def obtem_posicoes_jogador(tabuleiro, jogador):
-    if eh_tabuleiro(tabuleiro) and isinstance(jogador,int) and -1 <= jogador <= 1:
+    if eh_tabuleiro(tabuleiro) and isinstance(jogador,int) and jogador in (-1,1):
         pos_jogador = ()  #Tuplo para guardar as posições do jogador
         posicoes = 1
         for i in tabuleiro:
@@ -167,6 +170,10 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
 
 def ordena_posicoes_tabuleiro(tabuleiro, t):
     if eh_tabuleiro(tabuleiro) and isinstance(t, tuple):
+        for i in range(len(t)-1):
+            if not isinstance(t[i], int):
+                raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
+            
         m, n = obtem_dimensao(tabuleiro)[0], obtem_dimensao(tabuleiro)[1]
         elem_central = (m//2) * n + (n//2) + 1
         
@@ -196,22 +203,23 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
 
         
 def marca_posicao(tabuleiro, posicao, inteiro):
-    if eh_tabuleiro(tabuleiro) and eh_posicao_livre(tabuleiro, posicao) and (inteiro == 1 or inteiro == -1):
-        num_colunas = len(tabuleiro[0])
-        linha = (posicao - 1) // num_colunas
-        coluna = (posicao - 1) % num_colunas
-    
-        tab_marcado = ()  # Tuplo novo com o novo valor que queremos
-        for i in range(len(tabuleiro)):  # Cria um novo tuplo de tabuleiro marcando a posição com o inteiro dado (jogador)
-            nova_linha = ()
-            for j in range(len(tabuleiro[i])):
-                if i == linha and j == coluna:
-                    nova_linha += (inteiro,)  # Marca a posição com o jogador
-                else:
-                    nova_linha += (tabuleiro[i][j],) # Mantém o valor original
-            tab_marcado += (nova_linha,) # Adiciona a nova linha ao tuplo
+    if eh_tabuleiro(tabuleiro) and inteiro in (-1, 1) and eh_posicao_valida(tabuleiro, posicao):
+        if eh_posicao_livre(tabuleiro, posicao):
+            num_colunas = len(tabuleiro[0])
+            linha = (posicao - 1) // num_colunas
+            coluna = (posicao - 1) % num_colunas
+        
+            tab_marcado = ()  # Tuplo novo com o novo valor que queremos
+            for i in range(len(tabuleiro)):  # Cria um novo tuplo de tabuleiro marcando a posição com o inteiro dado (jogador)
+                nova_linha = ()
+                for j in range(len(tabuleiro[i])):
+                    if i == linha and j == coluna:
+                        nova_linha += (inteiro,)  # Marca a posição com o jogador
+                    else:
+                        nova_linha += (tabuleiro[i][j],) # Mantém o valor original
+                tab_marcado += (nova_linha,) # Adiciona a nova linha ao tuplo
 
-        return tab_marcado
+            return tab_marcado
     
     else:
         raise ValueError('marca_posicao: argumentos invalidos')
@@ -284,15 +292,12 @@ def escolhe_posicao_manual(tabuleiro):
     if eh_tabuleiro(tabuleiro):
         posicao = eval(input("Turno do jogador. Escolha uma posicao livre: "))
         if isinstance(posicao, int):
-            if eh_posicao_valida(tabuleiro, posicao):
-                if eh_posicao_livre(tabuleiro, posicao):
-                    return posicao
-                else:
-                    return escolhe_posicao_manual(tabuleiro)
+            if eh_posicao_livre(tabuleiro, posicao):
+                return posicao
             else:
                 return escolhe_posicao_manual(tabuleiro)
         else:
-            raise ValueError("escolhe_posicao_manual: argumento invalido")
+            return escolhe_posicao_manual(tabuleiro)
     else:
         raise ValueError("escolhe_posicao_manual: argumento invalido")
     
@@ -303,8 +308,8 @@ def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
                 return escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos)
             if dificuldade == "normal":
                 return escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos)
-            #elif dificuldade == "dificil":
-                #return escolhe_posicao_auto_dificil(tabuleiro, valor)
+            if dificuldade == "dificil":
+                return escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos)
     else:
         raise ValueError("escolhe_posicao_auto: argumentos invalidos")
             
@@ -322,7 +327,6 @@ def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
                 if eh_posicao_livre(tabuleiro, adj): 
                     posicoes_validas += (adj,)
 
-    
     if posicoes_validas:
         return ordena_posicoes_tabuleiro(tabuleiro, posicoes_validas)[0]
     
@@ -360,5 +364,58 @@ def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
     if len(posicoes_livres) == len(tabuleiro)*len(tabuleiro[0]):
         return ordena_posicoes_tabuleiro(tabuleiro, tuple(range(1, len(tabuleiro)*len(tabuleiro[0]))))[0]
 
-tab = ((1, 0, 0, 0, 0), (0, -1, 1, 1, 0), (0, 0, -1, 0, 0), (0, 0, 0, 0, 0), (0, 0, 0, 0, 0))
-print(escolhe_posicao_auto(tab, -1, 4, "normal"))
+
+def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
+    if not eh_fim_jogo(tabuleiro, consecutivos):
+        for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
+            if eh_posicao_livre(tabuleiro, i):
+                tabuleiro_novo = marca_posicao(tabuleiro, i, valor)
+                if verifica_k_linhas(tabuleiro_novo, i, valor, consecutivos):
+                    tabuleiro = tabuleiro_novo
+                    return i
+                
+        for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
+            if eh_posicao_livre(tabuleiro, i):
+                tabuleiro_novo = marca_posicao(tabuleiro, i, -valor)
+                if verifica_k_linhas(tabuleiro_novo, i, -valor, consecutivos):
+                    tabuleiro = tabuleiro_novo
+                    return i
+        
+        posicoes_livres = obtem_posicoes_livres(tabuleiro)
+        resultados = ()
+        
+        for posicao in posicoes_livres:
+            resultado = simula_partida(tabuleiro, posicao, valor, consecutivos)
+            resultados += ((resultado, posicao),)
+            
+        for resultado, posicao in resultados:
+            if resultado == "vitoria":
+                return posicao
+        for resultado, posicao in resultados:
+            if resultado == "empate":
+                return posicao
+        return posicoes_livres[0]
+
+def simula_partida(tabuleiro, posicao_inicial, valor, consecutivos):
+    tabuleiro_novo = marca_posicao(tabuleiro, posicao_inicial, valor)
+    if verifica_k_linhas(tabuleiro_novo, posicao_inicial, valor, consecutivos):
+        return "vitoria"
+    
+    jogador_atual = -valor
+    while not eh_fim_jogo(tabuleiro_novo, consecutivos):
+        posicoes_livres = obtem_posicoes_livres(tabuleiro_novo)
+        if not posicoes_livres:
+            break
+        posicao_jogada = escolhe_posicao_auto_normal(tabuleiro_novo, jogador_atual, consecutivos)
+        tabuleiro_novo = marca_posicao(tabuleiro_novo, posicao_jogada, jogador_atual)
+        if verifica_k_linhas(tabuleiro_novo, posicao_jogada, jogador_atual, consecutivos):
+            return "vitoria" if jogador_atual == valor else "derrota"
+        jogador_atual = -jogador_atual
+    
+    return "empate"
+            
+    
+    
+    
+tab = ((-1,-1,-1),(1,0,-1),(0,0,0))
+print(escolhe_posicao_auto(tab, 1, 3, "dificil"))
