@@ -223,7 +223,7 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
                 raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
             
         m, n = obtem_dimensao(tabuleiro)[0], obtem_dimensao(tabuleiro)[1]
-        elem_central = (m//2) * n + (n//2) + 1       # Calcula a posição central do tabuleiro
+        elem_central = (m//2) * n + (n//2) + 1     # Calcula a posição central do tabuleiro
         
         # Função para calcular a distância de um elemento ao centro
         def distancia_centro(centro, elemento):
@@ -244,7 +244,7 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
         distancias_total = ()
         for elemento in distancias:
             distancias_total += (elemento[0],)
-            
+
         return distancias_total
 
     else:
@@ -419,76 +419,81 @@ def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
 
 
 def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
+    
+    def simulacao(tabuleiro, valor):
+        tabuleiro_atual = tabuleiro
+        jogada_atual = -valor
+        posicao_passada = 0
+        
+        while not eh_fim_jogo(tabuleiro_atual, consecutivos):
+            posicao_sim = escolhe_posicao_auto(tabuleiro_atual, jogada_atual, consecutivos, "normal")
+            tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_sim, jogada_atual)
+            jogada_atual = -jogada_atual
+            
+            if len(obtem_posicoes_livres(tabuleiro_atual)) == 0:
+                return "EMPATE"
+            if verifica_k_linhas(tabuleiro_atual, posicao_sim, valor, consecutivos):
+                return "VITÓRIA"
+            if verifica_k_linhas(tabuleiro_atual, posicao_sim, -valor, consecutivos):
+                return "DERROTA"
+            
+    tuplo_jogador = ()
+    tuplo_adv = ()
+    posicoes_livres = obtem_posicoes_livres(tabuleiro)
+    
     if not eh_fim_jogo(tabuleiro, consecutivos):
-        for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
-            if eh_posicao_livre(tabuleiro, i):
+        for i in posicoes_livres:
                 tabuleiro_novo = marca_posicao(tabuleiro, i, valor)
                 if verifica_k_linhas(tabuleiro_novo, i, valor, consecutivos):
-                    tabuleiro = tabuleiro_novo
-                    return i
+                    tuplo_jogador += (i,)
+                    
+        if len(tuplo_jogador) != 0:
+            return ordena_posicoes_tabuleiro(tabuleiro, tuplo_jogador)[0]
                 
-        for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
-            if eh_posicao_livre(tabuleiro, i):
+        for i in posicoes_livres:
                 tabuleiro_novo = marca_posicao(tabuleiro, i, -valor)
+                print(tabuleiro_novo)
                 if verifica_k_linhas(tabuleiro_novo, i, -valor, consecutivos):
-                    tabuleiro = tabuleiro_novo
-                    return i
+                    tuplo_adv += (i,)
+                    
+        if len(tuplo_adv) != 0:
+            return ordena_posicoes_tabuleiro(tabuleiro, tuplo_adv)[0]
                 
-            vitoria = ()
-            empate = ()
-            sim = simulacao(tabuleiro, valor, consecutivos)
-            posicoes_livres = obtem_posicoes_livres(tabuleiro)
-            
-            for posicao in posicoes_livres:
-                tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
-                sim = simulacao(tabuleiro, valor, consecutivos)
-                if sim == "Vitória":
-                    vitoria += (posicao,)
-                elif sim == "Empate":
-                    sim += (posicao,)
+        vitoria = ()
+        empate = ()
+
+        for posicao in posicoes_livres:
+            tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
+            sim = simulacao(tabuleiro, valor)
+            if sim == "VITÓRIA":
+                vitoria += (posicao,)
+            elif sim == "EMPATE":
+                empate += (posicao,)
+        print(empate)
         
         # Prioridade: vitória > empate > qualquer posição livre
         if len(vitoria) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, vitoria)[0]
         if len(empate) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, empate)[0]
-        
-        
-def simulacao(tabuleiro, valor, consecutivos):
-    tabuleiro_atual = tabuleiro
-    posicao_passada = -1
-    jogada_atual = -valor
-    
-    while not eh_fim_jogo(tabuleiro_atual, consecutivos):
-        posicao_sim = escolhe_posicao_auto(tabuleiro_atual, jogada_atual, consecutivos, "normal")
-        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_sim, jogada_atual)
-        jogada_atual = -jogada_atual
-        
-    if len(obtem_posicoes_livres(tabuleiro_atual)) == 0:
-        return "Empate"
-    if verifica_k_linhas(tabuleiro_atual, posicao_passada, valor, consecutivos):
-        return "Vitória"
-    return "Derrota"
-        #FALTA FAZER A SIMULAÇÃO DE JOGO         
-            
+       
+       
 def jogo_mnk(tuplo, valor, dificuldade):
-    if len(tuplo) == 2 and isinstance(valor, int) and valor in (-1,1) and dificuldade in ("facil", "normal", "dificil"):
+    if len(tuplo) == 3 and isinstance(valor, int) and valor in (-1,1) and dificuldade in ("facil", "normal", "dificil"):
         linhas_tabuleiro = tuplo[0]
         colunas_tabuleiro = tuplo[1]
         tabuleiro = ((0,) * colunas_tabuleiro,) * linhas_tabuleiro
         tabuleiro_atual = tabuleiro
+        tabuleiro_desenho = tabuleiro_para_str(tabuleiro_atual)
         
-        print("Bem-vindo ao JOGO MNK.")
         if valor == 1:
-            print("O jogador joga com X")
+            print(f"Bem-vindo ao JOGO MNK.\nO jogador joga com \'X\'\n{tabuleiro_desenho}\n")
         else:
-            posicao_maquina = escolhe_posicao_auto(tabuleiro, valor, 3, dificuldade)
+            posicao_maquina = escolhe_posicao_auto(tabuleiro, valor, tuplo[2], dificuldade)
             print(posicao_maquina)
             tabuleiro_atual = marca_posicao(tabuleiro, posicao_maquina, -valor)
-            print("O jogador joga com O")
-            
-        tabuleiro_desenho = tabuleiro_para_str(tabuleiro_atual)
-        print(tabuleiro_desenho)
+            print(f"Bem-vindo ao JOGO MNK.\nO jogador joga com \'O\'\n{tabuleiro_desenho}\n")
+
         return resto_mnk(tabuleiro_atual, valor, dificuldade)
     
 def resto_mnk(tabuleiro, valor, dificuldade):
@@ -516,4 +521,3 @@ def resto_mnk(tabuleiro, valor, dificuldade):
             break
     
     return "Empate"
-
