@@ -517,5 +517,3 @@ def resto_mnk(tabuleiro, valor, dificuldade):
     
     return "Empate"
 
-tab = ((0,0,-1),(-1,1,0),(1,0,0))
-print(escolhe_posicao_auto(tab, 1, 3, "dificil"))
