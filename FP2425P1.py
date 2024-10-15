@@ -278,21 +278,30 @@ def marca_posicao(tabuleiro, posicao, inteiro):
             raise ValueError('marca_posicao: argumentos invalidos')
     else:
         raise ValueError('marca_posicao: argumentos invalidos')
+
+"""
+    Função que verifica se existem k peças consecutivas do mesmo jogador numa linha, coluna, diagonal ou antidiagonal.
+    A função utiliza uma função auxiliar para contar o número de peças consecutivas, que dá ao uso ciclos para percorrer a linha, coluna, diagonal,
+    calculando assim o número máximo de peças consecutivas. Caso o número de peças consecutivas seja maior ou igual a k, a função retorna True, caso contrário, False.
     
+"""
 def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
     if eh_tabuleiro(tabuleiro) and (-1 == valor or valor == 1) and 0 < consecutivos and isinstance(consecutivos, int):
         if not eh_posicao_valida(tabuleiro, posicao) or obtem_valor(tabuleiro, posicao) != valor:
             return False
         
+        # Obtém a linha, coluna e diagonais correspondentes à posição
         linha = obtem_linha(tabuleiro, posicao)
         coluna = obtem_coluna(tabuleiro, posicao)
         diag = obtem_diagonais(tabuleiro, posicao)
         
-        colunas_cons = conta_consecutivos(tabuleiro, posicao, coluna, valor)
+        # Conta o número máximo de valores consecutivos na coluna, linha e diagonais
+        colunas_cons = conta_consecutivos(tabuleiro, posicao, coluna, valor)    #Dá uso a uma função auxiliar
         linhas_cons = conta_consecutivos(tabuleiro, posicao, linha, valor)
         diag_cons = conta_consecutivos(tabuleiro, posicao, diag[0], valor)
         antidiag_cons = conta_consecutivos(tabuleiro, posicao, diag[1], valor)
         
+        # Verifica se há valores consecutivos suficientes em qualquer direção
         if colunas_cons >= consecutivos or linhas_cons >= consecutivos or diag_cons >= consecutivos or antidiag_cons >= consecutivos:
             return True
         else:
@@ -302,63 +311,82 @@ def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
         raise ValueError("verifica_k_linhas: argumentos invalidos")
  
 """
-    Função auxiliar para contar o número de peças consecutivas
-    
+    Função auxiliar para contar o número de peças consecutivas que tem um contador que aumenta sempre que encontra uma peça do mesmo jogador consecutiva a outra,
+    registando um valor de contador máximo que é atualizado sempre que o contador é maior que o máximo anterior, ao que o mesmo é retornado e utilizado na função verifica_k_linhas.
+    A função é dividida em duas partes, uma para verificar as peças consecutivas antes da posição dada e outra para verificar as peças consecutivas após a mesma.
 """           
 def conta_consecutivos(tabuleiro,posicao, tuplo1, valor):
     contador = 0
-    cons_max = 0
+    cont_max = 0
     for i in tuple(sorted(tuplo1)):
-        if i < posicao:
+        if i < posicao:     # Verifica se a posição atual é menor que a posição fornecida
+            if obtem_valor(tabuleiro, i) == valor:   #Já que a posicao dada precisa de estar incluída nos consecutivos, começamos por verificar as posições antes da dada
+                contador += 1
+                if contador > cont_max:
+                    cont_max = contador
+            else:
+                contador = 0   #Se não for do mesmo jogador, o contador é posto a 0
+                cont_max = 0
+        if i >= posicao:   #Verificar os possíveis consecutivos após a posição dada
             if obtem_valor(tabuleiro, i) == valor:
                 contador += 1
-                if contador > cons_max:
-                    cons_max = contador
+                if contador >= cont_max:
+                    cont_max = contador
             else:
                 contador = 0
-                cons_max = 0
-        if i >= posicao:
-            if obtem_valor(tabuleiro, i) == valor:
-                contador += 1
-                if contador >= cons_max:
-                    cons_max = contador
-            else:
-                contador = 0
-                break
-    return cons_max
+                break    #Se não tiver o mesmo valor, o ciclo é interrompido, já que já não é possível haver mais consecutivos com a posição dada
+    return cont_max
 
-
+"""
+    Função que verifica se o jogo terminou, ou seja, se existe um vencedor ou se o tabuleiro está cheio. Para tal, utiliza-se um ciclo for que percorre
+    o tabuleiro e verifica se existe um vencedor em alguma linha, coluna, diagonal ou antidiagonal, caso exista, a função retorna True. Caso contrário, verifica se
+    o tabuleiro está cheio, caso esteja, a função retorna True. Caso contrário, retorna False.
+    
+"""
 def eh_fim_jogo(tabuleiro, consecutivos):
     if eh_tabuleiro(tabuleiro) and isinstance(consecutivos, int) and consecutivos > 0:
         cont_pos_livres = 0
-        for i in range(1, len(tabuleiro)*len(tabuleiro[0])+1):
+        for i in range(1, len(tabuleiro)*len(tabuleiro[0])+1):   #range(1,12) para um tabuleiro 3x4
             if obtem_valor(tabuleiro, i) == 0:
                 cont_pos_livres += 1
             
             else:  
-                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), consecutivos):
+                if verifica_k_linhas(tabuleiro, i, obtem_valor(tabuleiro, i), consecutivos):   #Se houverem tais peças consecutivas, o jogo termina
                     return True
                     
-        if cont_pos_livres == 0:
+        if cont_pos_livres == 0:    #Para o caso de não existirem posições livres, dá-se o jogo como terminado
             return True
 
         return False
     else:
         raise ValueError("eh_fim_jogo: argumentos invalidos")
+    
+"""
+    Função que permite ao jogador escolher uma posição livre no tabuleiro e marcá-la com um valor específico. 
+    Para tal, pede-se ao jogador que introduza uma posição, e caso a posição seja livre retorna a mesma. Caso esteja ocupada retorna False, para dar
+    possibilidade ao jogador de emendar numa situação de jogo real e não gerar automaticamente erro.
+    
+"""
 
 def escolhe_posicao_manual(tabuleiro):
     if eh_tabuleiro(tabuleiro):
-        posicao = eval(input("Turno do jogador. Escolha uma posicao livre: "))
-        if isinstance(posicao, int) and eh_posicao_valida(tabuleiro, posicao):
+        posicao = eval(input("Turno do jogador. Escolha uma posicao livre: "))   # Solicita ao jogador que escolha uma posição livre
+        if type(posicao) == int and eh_posicao_valida(tabuleiro, posicao):
             if eh_posicao_livre(tabuleiro, posicao):
                 return posicao
             else:
-                return escolhe_posicao_manual(tabuleiro)
+                return escolhe_posicao_manual(tabuleiro)   # Se a posição não estiver livre, solicita novamente
         else:
-            return escolhe_posicao_manual(tabuleiro)
+            return escolhe_posicao_manual(tabuleiro)   # Se a posição não for válida, solicita novamente
     else:
         raise ValueError("escolhe_posicao_manual: argumento invalido")
     
+"""
+    Função que recebe um tabuleiro, um valor, um número de consecutivos e uma dificuldade (possível escolher entre facil, normal e dificil) e chama
+    funções auxiliares relativas a cada dificuldade.
+    
+"""
+
 def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
     if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and consecutivos > 0 and dificuldade in ("facil", "normal", "dificil"):
         if not eh_fim_jogo(tabuleiro, consecutivos):
@@ -371,6 +399,10 @@ def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
     else:
         raise ValueError("escolhe_posicao_auto: argumentos invalidos")
             
+"""
+    Função que determina a posição jogada pelo computador seguindo uma estratégia fácil de vitória
+    
+"""
 def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
         
     posicoes_validas = ()
@@ -378,23 +410,23 @@ def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
         
     for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
         if obtem_valor(tabuleiro, i) == 0:
-            posicoes_livres += 1
+            posicoes_livres += 1     #Conta as posições livres no tabuleiro
         if obtem_valor(tabuleiro, i) == valor:
             adjacentes = obtem_posicoes_adjacentes(tabuleiro, i)
-            for adj in adjacentes:
+            for adj in adjacentes:    # Verifica se as posições adjacentes estão livres e as adiciona às posições válidas
                 if eh_posicao_livre(tabuleiro, adj): 
                     posicoes_validas += (adj,)
 
-    if posicoes_validas:
+    if posicoes_validas:   # Se houver posições válidas, retorna a primeira posição ordenada
         return ordena_posicoes_tabuleiro(tabuleiro, posicoes_validas)[0]
     
-    if len(posicoes_validas) == 0:
+    if len(posicoes_validas) == 0:   # Se não houver posições válidas, retorna a primeira posição livre ordenada
+        return ordena_posicoes_tabuleiro(tabuleiro, obtem_posicoes_livres(tabuleiro))[0]
+     
+    if posicoes_livres == len(tabuleiro) * len(tabuleiro[0]):   # Se todas as posições estiverem livres, retorna a primeira posição livre ordenada
         return ordena_posicoes_tabuleiro(tabuleiro, obtem_posicoes_livres(tabuleiro))[0]
     
-    if posicoes_livres == len(tabuleiro) * len(tabuleiro[0]):
-        return ordena_posicoes_tabuleiro(tabuleiro, obtem_posicoes_livres(tabuleiro))[0]
-    
-    for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):
+    for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):   # Se nenhuma das condições acima for satisfeita, retorna a primeira posição livre encontrada
         if eh_posicao_livre(tabuleiro, i):
             return i
 
@@ -479,45 +511,57 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
        
        
 def jogo_mnk(tuplo, valor, dificuldade):
-    if len(tuplo) == 3 and isinstance(valor, int) and valor in (-1,1) and dificuldade in ("facil", "normal", "dificil"):
+    if len(tuplo) == 3 and isinstance(valor, int) and valor in (-1, 1) and dificuldade in ("facil", "normal", "dificil"):
         linhas_tabuleiro = tuplo[0]
         colunas_tabuleiro = tuplo[1]
         tabuleiro = ((0,) * colunas_tabuleiro,) * linhas_tabuleiro
-        tabuleiro_atual = tabuleiro
-        tabuleiro_desenho = tabuleiro_para_str(tabuleiro_atual)
         
+        print("Bem-vindo ao JOGO MNK.")
         if valor == 1:
-            print(f"Bem-vindo ao JOGO MNK.\nO jogador joga com \'X\'\n{tabuleiro_desenho}\n")
-        else:
-            posicao_maquina = escolhe_posicao_auto(tabuleiro, valor, tuplo[2], dificuldade)
-            print(posicao_maquina)
-            tabuleiro_atual = marca_posicao(tabuleiro, posicao_maquina, -valor)
-            print(f"Bem-vindo ao JOGO MNK.\nO jogador joga com \'O\'\n{tabuleiro_desenho}\n")
-
-        return resto_mnk(tabuleiro_atual, valor, dificuldade)
-    
-def resto_mnk(tabuleiro, valor, dificuldade):
-    while not eh_fim_jogo(tabuleiro, 3):
-        jogada_humana = escolhe_posicao_manual(tabuleiro)
-        tabuleiro = marca_posicao(tabuleiro, jogada_humana, valor)
+            print("O jogador joga com \'X\'.")
+        if valor == -1:
+            print("O jogador joga com \'O\'.")
+        print(valor)
         print(tabuleiro_para_str(tabuleiro))
+        return resto_mnk(tabuleiro, valor, dificuldade, tuplo)
+    
+    else:
+        raise ValueError("jogo_mnk: argumentos invalidos")
+
+def resto_mnk(tabuleiro, valor, dificuldade, tuplo):
+    while not eh_fim_jogo(tabuleiro, tuplo[2]):
+        # Jogada do humano
+        if valor == 1:
+            jogada_humana = escolhe_posicao_manual(tabuleiro)
+            tabuleiro = marca_posicao(tabuleiro, jogada_humana, -valor)
+            print(tabuleiro_para_str(tabuleiro))
         
-        if verifica_k_linhas(tabuleiro, jogada_humana, valor, 3):
-            return "Vitória"
-        
-        if eh_fim_jogo(tabuleiro, 3):
-            break
+            if verifica_k_linhas(tabuleiro, jogada_humana, -valor, tuplo[2]):
+                print("VITORIA")
+                return 1
+            
+            if eh_fim_jogo(tabuleiro, tuplo[2]):
+                break
         
         # Jogada da máquina
-        jogada_maquina = escolhe_posicao_auto(tabuleiro, -valor, 3, dificuldade)
-        tabuleiro = marca_posicao(tabuleiro, jogada_maquina, -valor)
-        print(f"Turno do computador ({dificuldade})")
-        print(tabuleiro_para_str(tabuleiro))
+        if valor == -1:
+            jogada_maquina = escolhe_posicao_auto(tabuleiro, -valor, tuplo[2], dificuldade)
+            tabuleiro = marca_posicao(tabuleiro, jogada_maquina, -valor)
+            print(f"Turno do computador ({dificuldade}):")
+            print(tabuleiro_para_str(tabuleiro))
         
-        if verifica_k_linhas(tabuleiro, jogada_maquina, -valor, 3):
-            return "Derrota"
-        
-        if eh_fim_jogo(tabuleiro, 3):
-            break
+            if verifica_k_linhas(tabuleiro, jogada_maquina, -valor, tuplo[2]):
+                print("DERROTA")
+                return -1
+            
+            if eh_fim_jogo(tabuleiro, tuplo[2]):
+                break
     
-    return "Empate"
+        valor = -valor
+    
+    print("EMPATE")
+    return 0
+
+
+print(jogo_mnk((3, 3, 3), -1, 'facil'))
+
