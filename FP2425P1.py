@@ -521,7 +521,6 @@ def jogo_mnk(tuplo, valor, dificuldade):
             print("O jogador joga com \'X\'.")
         if valor == -1:
             print("O jogador joga com \'O\'.")
-        print(valor)
         print(tabuleiro_para_str(tabuleiro))
         return resto_mnk(tabuleiro, valor, dificuldade, tuplo)
     
@@ -561,7 +560,4 @@ def resto_mnk(tabuleiro, valor, dificuldade, tuplo):
     
     print("EMPATE")
     return 0
-
-
-print(jogo_mnk((3, 3, 3), -1, 'facil'))
 
