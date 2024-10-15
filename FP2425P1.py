@@ -1,3 +1,9 @@
+"""
+    Função que prevê todos os erros ou exceções que podem existir no tabuleiro dado, returnando False se existir algum
+    erro e impossibilitando assim a execução do programa.
+    
+"""
+
 def eh_tabuleiro(tabuleiro):
     if not isinstance(tabuleiro,tuple):  #Verifica se é tuplo
         return False
@@ -17,6 +23,10 @@ def eh_tabuleiro(tabuleiro):
                 return False
     return True
     
+"""
+    Funções básicas que verificam se a posição dada é válida e a dimensão m x n do tabuleiro.   
+    
+"""
 def eh_posicao(posicao):
     if isinstance(posicao,int) and 0 < posicao < 10000:  #10000 é o tamanho de uma matriz 100x100
         return True
@@ -26,6 +36,10 @@ def eh_posicao(posicao):
 def obtem_dimensao(tabuleiro):
     return (len(tabuleiro), len(tabuleiro[0]))
 
+"""
+    Funções de obtenção de valores, colunas, linhas e diagonais/antidiagonais de uma posição dada.
+    
+"""
 def obtem_valor(tabuleiro, posicao):
     linhas = (posicao - 1) // len(tabuleiro[0])   #Para determinar em que linha está (tem o -1 porque o indez começa em 0, não em 1)
     colunas = (posicao - 1) % len(tabuleiro[0])   #Para detrminar em que coluna está
@@ -45,6 +59,13 @@ def obtem_linha(tabuleiro, posicao):
         tuplo += (linha * len(tabuleiro[0]) + i,)  # Calcular a posiçãp e adicionar ao tuplo
     return tuplo
 
+"""
+    Função mais complexa de obtenção de diagonais e antidiagonais de uma posição dada. Esta função é dividida em duas partes, a parte do
+    cálculo das diagonais e a parte do cálculo das antidiagonais, que são feitas em simultâneo a partir de whiles que percorrem
+    a extensão toda do tabuleiro e adicionam as posições ao tuplo correspondente. No final, recorre-se ao método sorted para ordenar a diagonal e
+    às antidionais, para além do sorted, utiliza-se o método reversed para inverter a ordem dos elementos e estar no sentido certo.
+    
+"""
 def obtem_diagonais(tabuleiro, posicao):
     linhas = len(tabuleiro)
     if linhas > 0:
@@ -85,8 +106,15 @@ def obtem_diagonais(tabuleiro, posicao):
     
     return (tuple(sorted(diagonal)), tuple(reversed(sorted(antidiagonal)))) #ordenar as diagonais e antidiagonais
 
+"""
+    Função que desenha o tabuleiro, colocando os valores de X e O nas posições corretas e desenhando as linhas e colunas do tabuleiro. 
+    A mesma é feita através de um ciclo for que percorre o tabuleiro e vai desenhando o jogo conforme o tabuleiro fornecido, ao que se
+    encontrar os valores de 1 e -1, coloca-se X e O respetivamente, e caso contrário, deixa-se como estava originalmente.
+    
+""" 
 def tabuleiro_para_str(tabuleiro):
     tab_desenho = ""
+    tab_desenho_final = ""
     contagem = 0
     for i in tabuleiro:
         tab_desenho += "+" + "---+"*(len(tabuleiro[0])-1)   #Desenhar cada linha do tabuleiro
@@ -100,11 +128,17 @@ def tabuleiro_para_str(tabuleiro):
             else:
                 contagem += 4   #Para passar para a próxima posição
                 
-        if tabuleiro[len(tabuleiro)-1] != i:
-            tab_desenho += "\n" + "|" + "   |"* (len(tabuleiro[0])-1) + "\n"   #Para desenhar as colunas
-        contagem += 4*(len(tabuleiro[0])-1)   #Passar para a linha de baixo
-    return tab_desenho
 
+        tab_desenho += "\n" + "|" + "   |"* (len(tabuleiro[0])-1) + "\n"    #Para desenhar as colunas
+        contagem += 4*(len(tabuleiro[0])-1)   #Passar para a linha de baixo
+        
+    tab_desenho_final = tab_desenho[:len(tab_desenho)-4*(len(tabuleiro[0])-1)-3]  #Para desenhar a última linha do tabuleiro
+    return tab_desenho_final
+
+"""
+    Funções auxiliares básicas para uma melhor abstração procedimental do código
+    
+"""
 def eh_posicao_valida(tabuleiro, posicao):
     if not eh_tabuleiro(tabuleiro) or not isinstance(posicao, int):
         raise ValueError("eh_posicao_valida: argumentos invalidos")
@@ -143,6 +177,12 @@ def obtem_posicoes_jogador(tabuleiro, jogador):
     else:
         raise ValueError("obtem_posicoes_jogador: argumentos invalidos")
     
+"""
+    Função que cria um tuplo com as posições adjacentes à posição dada, ordenadas por ordem crescente.
+    De modo a fazer isso, a função converte a posição linear em coordenadas (linha, coluna), define direções possíveis,
+    calcula novas posições e verifica se estas estão dentro dos limites do tabuleiro. Caso estejam, adiciona-as ao tuplo das adjacentes.
+    
+"""
 def obtem_posicoes_adjacentes(tabuleiro, posicao):
     if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
         num_linhas = len(tabuleiro)
@@ -168,15 +208,24 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
     else:
         raise ValueError("obtem_posicoes_adjacentes: argumentos invalidos")
 
+"""
+    Função que, dado um tabuleiro e um tuplo de posições, ordena as posições de acordo com a distância ao centro do tabuleiro.
+    Começa por calcular a posição central do tabuleiro, e de seguida, calcula a distância de cada posição ao centro com recurso
+    a uma função auxiliar.  Após isso, cria-se tuplos (posição, distância ao centro da respeitva posição) e 
+    usa-se uma função lambda para organizar os mesmos por distância ao centro e, em caso de empate, por posição original.
+    No fim, faz-se um novo tuplo apenas com as distâncias ao centro, por fim ordenadas.
+    
+"""
 def ordena_posicoes_tabuleiro(tabuleiro, t):
     if eh_tabuleiro(tabuleiro) and isinstance(t, tuple):
         for i in range(len(t)-1):
-            if not isinstance(t[i], int):
+            if not isinstance(t[i], int):      # Verifica se todos os elementos de t são inteiros
                 raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
             
         m, n = obtem_dimensao(tabuleiro)[0], obtem_dimensao(tabuleiro)[1]
-        elem_central = (m//2) * n + (n//2) + 1
+        elem_central = (m//2) * n + (n//2) + 1       # Calcula a posição central do tabuleiro
         
+        # Função para calcular a distância de um elemento ao centro
         def distancia_centro(centro, elemento):
             linha_centro = (centro - 1)//n
             coluna_centro = (centro - 1)%n
@@ -186,11 +235,12 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
         
         distancias = ()
         for elemento in t:
-            distancias += ((elemento, distancia_centro(elem_central, elemento)),)
+            distancias += ((elemento, distancia_centro(elem_central, elemento)),)  # Faz um tuplo com a posição e a sua respeitva distância ao centro
             
         # Ordena por distância ao centro, e em caso de empate, por posição original
         distancias = sorted(distancias, key=lambda x: (x[1], x[0]))
         
+        # Extrai os elementos ordenados
         distancias_total = ()
         for elemento in distancias:
             distancias_total += (elemento[0],)
@@ -200,8 +250,12 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
     else:
         raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
         
-
-        
+"""
+    Função que marca uma posição com um inteiro, que representa o jogador que marcou a posição. Ela cria um novo tabuleiro,
+    ao que o mesmo é composto por todos os elementos do tabuleiro original, exceto na posição dada, que é substituída
+    pelo inteiro correspondente ao valor do jogador
+    
+"""      
 def marca_posicao(tabuleiro, posicao, inteiro):
     if eh_tabuleiro(tabuleiro) and inteiro in (-1, 1) and eh_posicao_valida(tabuleiro, posicao):
         if eh_posicao_livre(tabuleiro, posicao):
@@ -220,7 +274,8 @@ def marca_posicao(tabuleiro, posicao, inteiro):
                 tab_marcado += (nova_linha,) # Adiciona a nova linha ao tuplo
 
             return tab_marcado
-    
+        else:
+            raise ValueError('marca_posicao: argumentos invalidos')
     else:
         raise ValueError('marca_posicao: argumentos invalidos')
     
@@ -246,7 +301,10 @@ def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
     else:
         raise ValueError("verifica_k_linhas: argumentos invalidos")
  
-"""Função auxiliar para contar o número de peças consecutivas"""           
+"""
+    Função auxiliar para contar o número de peças consecutivas
+    
+"""           
 def conta_consecutivos(tabuleiro,posicao, tuplo1, valor):
     contador = 0
     cons_max = 0
@@ -291,7 +349,7 @@ def eh_fim_jogo(tabuleiro, consecutivos):
 def escolhe_posicao_manual(tabuleiro):
     if eh_tabuleiro(tabuleiro):
         posicao = eval(input("Turno do jogador. Escolha uma posicao livre: "))
-        if isinstance(posicao, int):
+        if isinstance(posicao, int) and eh_posicao_valida(tabuleiro, posicao):
             if eh_posicao_livre(tabuleiro, posicao):
                 return posicao
             else:
@@ -350,19 +408,14 @@ def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
             tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
             if verifica_k_linhas(tabuleiro_novo, posicao, valor, l):
                 posicoes_l += (posicao,)
-        if posicoes_l:
-            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_l)[0]
             
-    for l in range(consecutivos, 0, -1):
-        for posicao in posicoes_livres:
             tabuleiro_novo = marca_posicao(tabuleiro, posicao, -valor)
             if verifica_k_linhas(tabuleiro_novo, posicao, -valor, l):
                 posicoes_adv += (posicao,)
-        if posicoes_adv:
+        if len(posicoes_l) != 0:
+            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_l)[0]
+        if len(posicoes_adv) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, posicoes_adv)[0]
-    
-    if len(posicoes_livres) == len(tabuleiro)*len(tabuleiro[0]):
-        return ordena_posicoes_tabuleiro(tabuleiro, tuple(range(1, len(tabuleiro)*len(tabuleiro[0]))))[0]
 
 
 def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
@@ -381,41 +434,72 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
                     tabuleiro = tabuleiro_novo
                     return i
         
-        posicoes_livres = obtem_posicoes_livres(tabuleiro)
-        resultados = ()
         
-        for posicao in posicoes_livres:
-            resultado = simula_partida(tabuleiro, posicao, valor, consecutivos)
-            resultados += ((resultado, posicao),)
-            
-        for resultado, posicao in resultados:
-            if resultado == "vitoria":
-                return posicao
-        for resultado, posicao in resultados:
-            if resultado == "empate":
-                return posicao
-        return posicoes_livres[0]
-
-def simula_partida(tabuleiro, posicao_inicial, valor, consecutivos):
-    tabuleiro_novo = marca_posicao(tabuleiro, posicao_inicial, valor)
-    if verifica_k_linhas(tabuleiro_novo, posicao_inicial, valor, consecutivos):
-        return "vitoria"
+def simulacao(tabuleiro, valor, consecutivos,):
+    tabuleiro_atual = tabuleiro
+    posicao_passada = -1
+    posicao_jogador = -1
     
-    jogador_atual = -valor
-    while not eh_fim_jogo(tabuleiro_novo, consecutivos):
-        posicoes_livres = obtem_posicoes_livres(tabuleiro_novo)
-        if not posicoes_livres:
+    while not eh_fim_jogo(tabuleiro_atual, consecutivos):
+        posicao_passada = escolhe_posicao_auto(tabuleiro_atual, valor, consecutivos, "normal")
+        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_passada, valor)
+        posicao_jogador = escolhe_posicao_auto(tabuleiro_atual, -valor, consecutivos, "normal")
+        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_jogador, -valor)
+        
+    if len(obtem_posicoes_livres(tabuleiro_atual)) == 0:
+        return "Empate"
+    if verifica_k_linhas(tabuleiro_atual, posicao_passada, valor, consecutivos):
+        return "Vitória"
+    return "Derrota"
+        #FALTA FAZER A SIMULAÇÃO DE JOGO
+            
+def jogo_mnk(tuplo, valor, dificuldade):
+    if len(tuplo) == 2 and isinstance(valor, int) and valor in (-1,1) and dificuldade in ("facil", "normal", "dificil"):
+        linhas_tabuleiro = tuplo[0]
+        colunas_tabuleiro = tuplo[1]
+        tabuleiro = ((0,) * colunas_tabuleiro,) * linhas_tabuleiro
+        tabuleiro_atual = tabuleiro
+        
+        print("Bem-vindo ao JOGO MNK.")
+        if valor == 1:
+            print("O jogador joga com X")
+        else:
+            posicao_maquina = escolhe_posicao_auto(tabuleiro, valor, 3, dificuldade)
+            print(posicao_maquina)
+            tabuleiro_atual = marca_posicao(tabuleiro, posicao_maquina, -valor)
+            print("O jogador joga com O")
+            
+        tabuleiro_desenho = tabuleiro_para_str(tabuleiro_atual)
+        print(tabuleiro_desenho)
+        return resto_mnk(tabuleiro_atual, valor, dificuldade)
+    
+def resto_mnk(tabuleiro, valor, dificuldade):
+    while not eh_fim_jogo(tabuleiro, 3):
+        jogada_humana = escolhe_posicao_manual(tabuleiro)
+        tabuleiro = marca_posicao(tabuleiro, jogada_humana, valor)
+        print(tabuleiro_para_str(tabuleiro))
+        
+        if verifica_k_linhas(tabuleiro, jogada_humana, valor, 3):
+            return "Vitória"
+        
+        if eh_fim_jogo(tabuleiro, 3):
             break
-        posicao_jogada = escolhe_posicao_auto_normal(tabuleiro_novo, jogador_atual, consecutivos)
-        tabuleiro_novo = marca_posicao(tabuleiro_novo, posicao_jogada, jogador_atual)
-        if verifica_k_linhas(tabuleiro_novo, posicao_jogada, jogador_atual, consecutivos):
-            return "vitoria" if jogador_atual == valor else "derrota"
-        jogador_atual = -jogador_atual
+        
+        # Jogada da máquina
+        jogada_maquina = escolhe_posicao_auto(tabuleiro, -valor, 3, dificuldade)
+        tabuleiro = marca_posicao(tabuleiro, jogada_maquina, -valor)
+        print(f"Turno do computador ({dificuldade})")
+        print(tabuleiro_para_str(tabuleiro))
+        
+        if verifica_k_linhas(tabuleiro, jogada_maquina, -valor, 3):
+            return "Derrota"
+        
+        if eh_fim_jogo(tabuleiro, 3):
+            break
     
-    return "empate"
-            
+    return "Empate"
+        
+
+tab = (3,3)
+print(jogo_mnk(tab, 1, "facil"))
     
-    
-    
-tab = ((-1,-1,-1),(1,0,-1),(0,0,0))
-print(escolhe_posicao_auto(tab, 1, 3, "dificil"))
