@@ -433,25 +433,43 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
                 if verifica_k_linhas(tabuleiro_novo, i, -valor, consecutivos):
                     tabuleiro = tabuleiro_novo
                     return i
+                
+            vitoria = ()
+            empate = ()
+            sim = simulacao(tabuleiro, valor, consecutivos)
+            posicoes_livres = obtem_posicoes_livres(tabuleiro)
+            
+            for posicao in posicoes_livres:
+                tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
+                sim = simulacao(tabuleiro, valor, consecutivos)
+                if sim == "Vitória":
+                    vitoria += (posicao,)
+                elif sim == "Empate":
+                    sim += (posicao,)
+        
+        # Prioridade: vitória > empate > qualquer posição livre
+        if len(vitoria) != 0:
+            return ordena_posicoes_tabuleiro(tabuleiro, vitoria)[0]
+        if len(empate) != 0:
+            return ordena_posicoes_tabuleiro(tabuleiro, empate)[0]
         
         
-def simulacao(tabuleiro, valor, consecutivos,):
+def simulacao(tabuleiro, valor, consecutivos):
     tabuleiro_atual = tabuleiro
     posicao_passada = -1
-    posicao_jogador = -1
+    jogada_atual = -valor
     
     while not eh_fim_jogo(tabuleiro_atual, consecutivos):
-        posicao_passada = escolhe_posicao_auto(tabuleiro_atual, valor, consecutivos, "normal")
-        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_passada, valor)
-        posicao_jogador = escolhe_posicao_auto(tabuleiro_atual, -valor, consecutivos, "normal")
-        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_jogador, -valor)
+        posicao_sim = escolhe_posicao_auto(tabuleiro_atual, jogada_atual, consecutivos, "normal")
+        tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_sim, jogada_atual)
+        jogada_atual = -jogada_atual
         
     if len(obtem_posicoes_livres(tabuleiro_atual)) == 0:
         return "Empate"
     if verifica_k_linhas(tabuleiro_atual, posicao_passada, valor, consecutivos):
         return "Vitória"
     return "Derrota"
-        #FALTA FAZER A SIMULAÇÃO DE JOGO
+        #FALTA FAZER A SIMULAÇÃO DE JOGO         
             
 def jogo_mnk(tuplo, valor, dificuldade):
     if len(tuplo) == 2 and isinstance(valor, int) and valor in (-1,1) and dificuldade in ("facil", "normal", "dificil"):
@@ -498,8 +516,6 @@ def resto_mnk(tabuleiro, valor, dificuldade):
             break
     
     return "Empate"
-        
 
-tab = (3,3)
-print(jogo_mnk(tab, 1, "facil"))
-    
+tab = ((0,0,-1),(-1,1,0),(1,0,0))
+print(escolhe_posicao_auto(tab, 1, 3, "dificil"))
