@@ -499,7 +499,6 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
                 
         for i in posicoes_livres:    #Ciclo para verificar se dá para impedir a vitória do jogador numa posição específica
                 tabuleiro_novo = marca_posicao(tabuleiro, i, -valor)
-                print(tabuleiro_novo)
                 if verifica_k_linhas(tabuleiro_novo, i, -valor, consecutivos):
                     tuplo_adv += (i,)
                     
@@ -511,7 +510,7 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
 
         for posicao in posicoes_livres:
             tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
-            sim = simulacao(tabuleiro, valor)   #Executa a simulação para a posição livre atual
+            sim = simulacao(tabuleiro_novo, valor)   #Executa a simulação para a posição livre atual
             if sim == "VITÓRIA":
                 vitoria += (posicao,)
             elif sim == "EMPATE":
@@ -573,7 +572,7 @@ def resto_mnk(tabuleiro, valor, dificuldade, tuplo, jog):
         
             if verifica_k_linhas(tabuleiro, jogada_humana, jog, tuplo[2]):    # Verifica se o humano ganhou
                 print("VITORIA")
-                return 1
+                return jog
             
             if eh_fim_jogo(tabuleiro, tuplo[2]):   # Verifica se o jogo terminou
                 break
@@ -587,7 +586,7 @@ def resto_mnk(tabuleiro, valor, dificuldade, tuplo, jog):
         
             if verifica_k_linhas(tabuleiro, jogada_maquina, -jog, tuplo[2]):  # Verifica se a máquina ganhou/humano perdeu
                 print("DERROTA")
-                return -1
+                return -jog
             
             if eh_fim_jogo(tabuleiro, tuplo[2]):   # Verifica se o jogo terminou
                 break
