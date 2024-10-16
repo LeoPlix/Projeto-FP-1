@@ -28,7 +28,7 @@ def eh_tabuleiro(tabuleiro):
     
 """
 def eh_posicao(posicao):
-    if isinstance(posicao,int) and 0 < posicao < 10000:  #10000 é o tamanho de uma matriz 100x100
+    if type(posicao) == int and 0 < posicao < 10000:  #10000 é o tamanho de uma matriz 100x100
         return True
     else:
         return False
@@ -391,7 +391,7 @@ def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
     if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and consecutivos > 0 and dificuldade in ("facil", "normal", "dificil"):
         if not eh_fim_jogo(tabuleiro, consecutivos):
             if dificuldade == "facil":
-                return escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos)
+                return escolhe_posicao_auto_facil(tabuleiro, valor)
             if dificuldade == "normal":
                 return escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos)
             if dificuldade == "dificil":
@@ -403,7 +403,7 @@ def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
     Função que determina a posição jogada pelo computador seguindo uma estratégia fácil de vitória
     
 """
-def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
+def escolhe_posicao_auto_facil(tabuleiro, valor):
         
     posicoes_validas = ()
     posicoes_livres = 0
@@ -429,7 +429,11 @@ def escolhe_posicao_auto_facil(tabuleiro, valor, consecutivos):
     for i in range(1, len(tabuleiro) * len(tabuleiro[0]) + 1):   # Se nenhuma das condições acima for satisfeita, retorna a primeira posição livre encontrada
         if eh_posicao_livre(tabuleiro, i):
             return i
+"""
+    Função que determina a posição jogada pelo computador seguindo uma estratégia normal de vitória em que o computador
+    intercepta uma possível vitória do jogador e joga a seu favor caso esteja a uma posição de ganhar.
 
+"""
 def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
     posicoes_l = ()
     posicoes_adv = ()
@@ -437,30 +441,41 @@ def escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos):
     
     for l in range(consecutivos, 0, -1):
         for posicao in posicoes_livres:
-            tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
-            if verifica_k_linhas(tabuleiro_novo, posicao, valor, l):
-                posicoes_l += (posicao,)
-            
-            tabuleiro_novo = marca_posicao(tabuleiro, posicao, -valor)
-            if verifica_k_linhas(tabuleiro_novo, posicao, -valor, l):
-                posicoes_adv += (posicao,)
+                tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)   # Marca a posição atual com o valor do jogador e verifica se cria uma linha de 'l' consecutivos
+                if verifica_k_linhas(tabuleiro_novo, posicao, valor, l):
+                    posicoes_l += (posicao,)
+                
+                tabuleiro_novo = marca_posicao(tabuleiro, posicao, -valor)
+                if verifica_k_linhas(tabuleiro_novo, posicao, -valor, l):
+                    posicoes_adv += (posicao,)
+                    
         if len(posicoes_l) != 0:
-            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_l)[0]
+            return ordena_posicoes_tabuleiro(tabuleiro, posicoes_l)[0]    #Se houver posições favoráveis, retorna a primeira posição ordenada
         if len(posicoes_adv) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, posicoes_adv)[0]
 
+"""
+    Função que determina a posição jogada pelo computador seguindo uma estratégia normal de vitória em que o computador
+    intercepta uma possível vitória do jogador e joga a seu favor caso esteja a uma posição de ganhar e, caso essa situação não exista,
+    simula uma jogada inteira de modo a perceber qual a melhor posição para jogar para cada posição do computador e do jogador.
+    
+"""
 
 def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
-    
-    def simulacao(tabuleiro, valor):
-        tabuleiro_atual = tabuleiro
+    """
+        Função auxiliar que enquanto o jogo não termina simula a jogada inteira em que tanto o computador
+        como o jogador jogam com base numa estratégia normal e ternova situações de jogo de vitória,
+        empate e derrota.
+
+    """
+    def simulacao(tabuleiro, valor):    #Define uma função auxiliar para simular o jogo
+        tabuleiro_atual = tabuleiro   #Dentro da pr´pria função para usar a variável "consecutivos"
         jogada_atual = -valor
-        posicao_passada = 0
         
         while not eh_fim_jogo(tabuleiro_atual, consecutivos):
-            posicao_sim = escolhe_posicao_auto(tabuleiro_atual, jogada_atual, consecutivos, "normal")
-            tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_sim, jogada_atual)
-            jogada_atual = -jogada_atual
+            posicao_sim = escolhe_posicao_auto(tabuleiro_atual, jogada_atual, consecutivos, "normal")   # Escolhe uma posição automaticamente para o jogador atual
+            tabuleiro_atual = marca_posicao(tabuleiro_atual, posicao_sim, jogada_atual)   # Marca a posição escolhida no tabuleiro
+            jogada_atual = -jogada_atual   # Alterna o jogador
             
             if len(obtem_posicoes_livres(tabuleiro_atual)) == 0:
                 return "EMPATE"
@@ -474,7 +489,7 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
     posicoes_livres = obtem_posicoes_livres(tabuleiro)
     
     if not eh_fim_jogo(tabuleiro, consecutivos):
-        for i in posicoes_livres:
+        for i in posicoes_livres:    #Ciclo para verificar se dá para vencer ao jogar numa posição específica
                 tabuleiro_novo = marca_posicao(tabuleiro, i, valor)
                 if verifica_k_linhas(tabuleiro_novo, i, valor, consecutivos):
                     tuplo_jogador += (i,)
@@ -482,7 +497,7 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
         if len(tuplo_jogador) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, tuplo_jogador)[0]
                 
-        for i in posicoes_livres:
+        for i in posicoes_livres:    #Ciclo para verificar se dá para impedir a vitória do jogador numa posição específica
                 tabuleiro_novo = marca_posicao(tabuleiro, i, -valor)
                 print(tabuleiro_novo)
                 if verifica_k_linhas(tabuleiro_novo, i, -valor, consecutivos):
@@ -496,68 +511,88 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
 
         for posicao in posicoes_livres:
             tabuleiro_novo = marca_posicao(tabuleiro, posicao, valor)
-            sim = simulacao(tabuleiro, valor)
+            sim = simulacao(tabuleiro, valor)   #Executa a simulação para a posição livre atual
             if sim == "VITÓRIA":
                 vitoria += (posicao,)
             elif sim == "EMPATE":
                 empate += (posicao,)
-        print(empate)
         
         # Prioridade: vitória > empate > qualquer posição livre
         if len(vitoria) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, vitoria)[0]
         if len(empate) != 0:
             return ordena_posicoes_tabuleiro(tabuleiro, empate)[0]
-       
-       
+
+"""
+    Função que desenha o jogo no terminal de acordo a como ele se está a decorrer.
+    A função verifica qual é o valor do jogador e faz com que a máquina tenha o inverso, ao que quem
+    tem o valor correspondente ao X tem a primeira jogada. A partir daí, dá-se ao uso um ciclo while para
+    enquanto o jogo não termina continuar a desenhar posições no tabuleiro. Quando o jogo termina, verifica-se
+    se foi vitória, derrota ou empate para o jogador humano e retorna-se um valor inteiro correspondente a cada situação.
+"""
+
 def jogo_mnk(tuplo, valor, dificuldade):
-    if len(tuplo) == 3 and isinstance(valor, int) and valor in (-1, 1) and dificuldade in ("facil", "normal", "dificil"):
-        linhas_tabuleiro = tuplo[0]
+    if isinstance(tuplo, tuple) and isinstance(valor, int) and valor in (-1, 1) and dificuldade in ("facil", "normal", "dificil"):
+        if len(tuplo) != 3:
+            raise ValueError("jogo_mnk: argumentos invalidos")
+        for i in tuplo:
+            if not isinstance(i, int) or i<=0:
+                raise ValueError("jogo_mnk: argumentos invalidos")
+            
+        linhas_tabuleiro = tuplo[0]   # Inicializa o tabuleiro com as dimensões fornecidas no tuplo
         colunas_tabuleiro = tuplo[1]
         tabuleiro = ((0,) * colunas_tabuleiro,) * linhas_tabuleiro
         
         print("Bem-vindo ao JOGO MNK.")
-        if valor == 1:
-            print("O jogador joga com \'X\'.")
+        if valor == 1:    # Define o símbolo do jogador humano
+            print("O jogador joga com 'X'.")
+            jogada_humana = 1
         if valor == -1:
-            print("O jogador joga com \'O\'.")
-        print(tabuleiro_para_str(tabuleiro))
-        return resto_mnk(tabuleiro, valor, dificuldade, tuplo)
+            print("O jogador joga com 'O'.")
+            jogada_humana = -1
+        print(tabuleiro_para_str(tabuleiro))   # Imprime o tabuleiro inicial
+        return resto_mnk(tabuleiro, valor, dificuldade, tuplo, jogada_humana)   # Inicia o resto do jogo
     
     else:
         raise ValueError("jogo_mnk: argumentos invalidos")
 
-def resto_mnk(tabuleiro, valor, dificuldade, tuplo):
-    while not eh_fim_jogo(tabuleiro, tuplo[2]):
+"""
+    Função auxiliar.
+    Após o menu de inicialização onde é definido quem joga primeiro, entra-se num ciclo while para desenhar o jogo
+    até chegar ao fim do jogo. Quando se chega ao fim, emite uma mensagem correspondente à prestação do jogador
+    humano no jogo (vitória, derrota ou empate)
+    
+"""
+def resto_mnk(tabuleiro, valor, dificuldade, tuplo, jog):
+    while not eh_fim_jogo(tabuleiro, tuplo[2]):    # Continua o jogo enquanto não for o fim do jogo
         # Jogada do humano
         if valor == 1:
             jogada_humana = escolhe_posicao_manual(tabuleiro)
-            tabuleiro = marca_posicao(tabuleiro, jogada_humana, -valor)
+            tabuleiro = marca_posicao(tabuleiro, jogada_humana, jog)
             print(tabuleiro_para_str(tabuleiro))
         
-            if verifica_k_linhas(tabuleiro, jogada_humana, -valor, tuplo[2]):
+            if verifica_k_linhas(tabuleiro, jogada_humana, jog, tuplo[2]):    # Verifica se o humano ganhou
                 print("VITORIA")
                 return 1
             
-            if eh_fim_jogo(tabuleiro, tuplo[2]):
+            if eh_fim_jogo(tabuleiro, tuplo[2]):   # Verifica se o jogo terminou
                 break
         
         # Jogada da máquina
         if valor == -1:
-            jogada_maquina = escolhe_posicao_auto(tabuleiro, -valor, tuplo[2], dificuldade)
-            tabuleiro = marca_posicao(tabuleiro, jogada_maquina, -valor)
+            jogada_maquina = escolhe_posicao_auto(tabuleiro, -jog, tuplo[2], dificuldade)
+            tabuleiro = marca_posicao(tabuleiro, jogada_maquina, -jog)
             print(f"Turno do computador ({dificuldade}):")
             print(tabuleiro_para_str(tabuleiro))
         
-            if verifica_k_linhas(tabuleiro, jogada_maquina, -valor, tuplo[2]):
+            if verifica_k_linhas(tabuleiro, jogada_maquina, -jog, tuplo[2]):  # Verifica se a máquina ganhou/humano perdeu
                 print("DERROTA")
                 return -1
             
-            if eh_fim_jogo(tabuleiro, tuplo[2]):
+            if eh_fim_jogo(tabuleiro, tuplo[2]):   # Verifica se o jogo terminou
                 break
     
-        valor = -valor
+        valor = -valor   # Alterna o jogador
     
     print("EMPATE")
     return 0
-
