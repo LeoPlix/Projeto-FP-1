@@ -146,7 +146,9 @@ def eh_posicao_valida(tabuleiro, posicao):
 
 
 def eh_posicao_livre(tabuleiro, posicao):
-    if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
+    if eh_tabuleiro(tabuleiro):
+        if not eh_posicao_valida(tabuleiro, posicao):
+            raise ValueError("eh_posicao_livre: argumentos invalidos")
         return obtem_valor(tabuleiro, posicao) == 0
     else:
         raise ValueError("eh_posicao_livre: argumentos invalidos")
@@ -184,7 +186,9 @@ def obtem_posicoes_jogador(tabuleiro, jogador):
     
 """
 def obtem_posicoes_adjacentes(tabuleiro, posicao):
-    if eh_tabuleiro(tabuleiro) and eh_posicao_valida(tabuleiro, posicao):
+    if eh_tabuleiro(tabuleiro):
+        if not eh_posicao_valida(tabuleiro, posicao):
+            raise ValueError("obtem_posicoes_adjacentes: argumentos invalidos")
         num_linhas = len(tabuleiro)
         num_colunas = len(tabuleiro[0])
         linha = (posicao - 1) // num_colunas
@@ -218,7 +222,7 @@ def obtem_posicoes_adjacentes(tabuleiro, posicao):
 """
 def ordena_posicoes_tabuleiro(tabuleiro, t):
     if eh_tabuleiro(tabuleiro) and isinstance(t, tuple):
-        for i in range(len(t)-1):
+        for i in range(len(t)):
             if not isinstance(t[i], int):      # Verifica se todos os elementos de t são inteiros
                 raise ValueError("ordena_posicoes_tabuleiro: argumentos invalidos")
             
@@ -257,7 +261,10 @@ def ordena_posicoes_tabuleiro(tabuleiro, t):
     
 """      
 def marca_posicao(tabuleiro, posicao, inteiro):
-    if eh_tabuleiro(tabuleiro) and inteiro in (-1, 1) and eh_posicao_valida(tabuleiro, posicao):
+    if eh_tabuleiro(tabuleiro) and isinstance(inteiro,int):
+        if not eh_posicao_valida(tabuleiro, posicao):
+            raise ValueError('marca_posicao: argumentos invalidos')
+        
         if eh_posicao_livre(tabuleiro, posicao):
             num_colunas = len(tabuleiro[0])
             linha = (posicao - 1) // num_colunas
@@ -286,7 +293,9 @@ def marca_posicao(tabuleiro, posicao, inteiro):
     
 """
 def verifica_k_linhas(tabuleiro, posicao, valor, consecutivos):
-    if eh_tabuleiro(tabuleiro) and (-1 == valor or valor == 1) and 0 < consecutivos and isinstance(consecutivos, int):
+    if eh_tabuleiro(tabuleiro) and isinstance(valor,int) and isinstance(consecutivos, int):
+        if not (valor == -1 or valor == 1) or 0 > consecutivos:
+            raise ValueError("verifica_k_linhas: argumentos invalidos")
         if not eh_posicao_valida(tabuleiro, posicao) or obtem_valor(tabuleiro, posicao) != valor:
             return False
         
@@ -388,14 +397,17 @@ def escolhe_posicao_manual(tabuleiro):
 """
 
 def escolhe_posicao_auto(tabuleiro, valor, consecutivos, dificuldade):
-    if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and -1 <= valor <= 1 and consecutivos > 0 and dificuldade in ("facil", "normal", "dificil"):
-        if not eh_fim_jogo(tabuleiro, consecutivos):
-            if dificuldade == "facil":
-                return escolhe_posicao_auto_facil(tabuleiro, valor)
-            if dificuldade == "normal":
-                return escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos)
-            if dificuldade == "dificil":
-                return escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos)
+    if eh_tabuleiro(tabuleiro) and isinstance(valor, int) and isinstance(consecutivos,int) and dificuldade in ("facil", "normal", "dificil"):
+        if valor in (-1,1) and consecutivos > 0 :
+            if not eh_fim_jogo(tabuleiro, consecutivos):
+                if dificuldade == "facil":
+                    return escolhe_posicao_auto_facil(tabuleiro, valor)
+                if dificuldade == "normal":
+                    return escolhe_posicao_auto_normal(tabuleiro, valor, consecutivos)
+                if dificuldade == "dificil":
+                    return escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos)
+        else:
+            raise ValueError("escolhe_posicao_auto: argumentos invalidos")
     else:
         raise ValueError("escolhe_posicao_auto: argumentos invalidos")
             
@@ -531,8 +543,8 @@ def escolhe_posicao_auto_dificil(tabuleiro, valor, consecutivos):
 """
 
 def jogo_mnk(tuplo, valor, dificuldade):
-    if isinstance(tuplo, tuple) and isinstance(valor, int) and valor in (-1, 1) and dificuldade in ("facil", "normal", "dificil"):
-        if len(tuplo) != 3:
+    if isinstance(tuplo, tuple) and isinstance(valor, int) and dificuldade in ("facil", "normal", "dificil"):
+        if len(tuplo) != 3 or valor not in (-1,1):
             raise ValueError("jogo_mnk: argumentos invalidos")
         for i in tuplo:
             if not isinstance(i, int) or i<=0:
@@ -595,3 +607,4 @@ def resto_mnk(tabuleiro, valor, dificuldade, tuplo, jog):
     
     print("EMPATE")
     return 0
+
