@@ -56,7 +56,7 @@ def obtem_linha(tabuleiro, posicao):
     linha = (posicao - 1) // len(tabuleiro[0])  
     tuplo = ()
     for i in range(1, len(tabuleiro[0]) + 1):
-        tuplo += (linha * len(tabuleiro[0]) + i,)  # Calcular a posiçãp e adicionar ao tuplo
+        tuplo += (linha * len(tabuleiro[0]) + i,)  # Calcular a posição e adicionar ao tuplo
     return tuplo
 
 """
